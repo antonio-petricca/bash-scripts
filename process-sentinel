@@ -1,7 +1,7 @@
 #!/bin/bash
 if [ $# -lt 3 ]; then
     echo "Usage:"
-    echo "  $(basename $0) [Process name] [Check interval (seconds)] [Notification timeout (milliseconds)]"
+    echo "  $(basename $0) [Process command line] [Check interval (seconds)] [Notification timeout (milliseconds)]"
     exit 1
 fi
 
@@ -12,24 +12,27 @@ TIMEOUT=$3
 command -v notify-send &> /dev/null || sudo apt install -y libnotify-bin || exit $?
 
 function notify {
-    notify-send --expire-time=${TIMEOUT} --icon=applications-system "Process Check" $1
-    echo $1
+    notify-send --expire-time=${TIMEOUT} --icon=applications-system "Process Sentinel" "$1"
+    echo "$1"
 }
+
+echo "Checking for \"${PROCESS}\" started..."
 
 FOUND=false
 
 while true; do
-    PID=$(pidof -s ${PROCESS})
+    ps aux | grep ${PROCESS} | grep -v grep | grep -v $(basename $0) &> /dev/null
+    [ $? -eq 0 ] && EXISTS=true || EXISTS=false
 
     if ! ${FOUND}; then
-        if [[ -n ${PID} ]]; then
+        if ${EXISTS}; then
             FOUND=true
-            notify "Found!"
+            notify "\"${PROCESS}\" is running."
         fi
     else
-        if [[ -z ${PID} ]]; then
+        if ! ${EXISTS}; then
             FOUND=false
-            notify "Terminated."
+            notify "\"${PROCESS}\" terminated."
         fi
     fi
 
