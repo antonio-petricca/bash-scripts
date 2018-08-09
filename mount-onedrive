@@ -1,0 +1,21 @@
+#!/bin/bash
+
+command -v rclone &> /dev/null || sudo apt install -y rclone || exit $?
+
+FOLDER=~/OneDrive
+TIMEOUT=5
+
+FOLDER=$(readlink -f ${FOLDER})
+
+while true; do
+    echo "Trying to connect..."
+
+    if mountpoint -q ${FOLDER}; then
+        fusermount -u ${FOLDER}    
+    fi
+
+    ionice -c idle sh -c "rclone --vfs-cache-mode writes mount onedrive: ${FOLDER}" || {
+        echo "Connection failure, retrying after ${TIMEOUT} seconds..."
+        sleep ${TIMEOUT}
+    }
+done
