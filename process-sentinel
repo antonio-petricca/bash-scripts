@@ -1,4 +1,5 @@
 #!/bin/bash
+
 if [ $# -lt 3 ]; then
     echo "Usage:"
     echo "  $(basename $0) [Process command line] [Check interval (seconds)] [Notification timeout (milliseconds)]"

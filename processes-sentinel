@@ -1,0 +1,51 @@
+#!/bin/bash
+
+if [ $# -lt 3 ]; then
+    echo "Usage:"
+    echo "  $(basename $0) [Check interval (seconds)] [Notification timeout (milliseconds)] [Programs list...] "
+    exit 1
+fi
+
+INTERVAL=$1
+TIMEOUT=$2
+
+shift 2
+declare -a PROCESSES=($@)
+
+command -v notify-send &> /dev/null || sudo apt install -y libnotify-bin || exit $?
+
+function notify {
+    notify-send --expire-time=${TIMEOUT} --icon=applications-system "Process Sentinel" "$1"
+    echo "$1"
+}
+
+declare -A FOUND
+declare -A RUNNING
+
+for PROCESS in ${PROCESSES[@]}; do
+    FOUND[${PROCESS}]=false
+    RUNNING[${PROCESS}]=false
+done
+
+while true; do
+    for PROCESS in ${PROCESSES[@]}; do
+        
+        ps aux | grep ${PROCESS} | grep -v grep | grep -v $(basename $0) &> /dev/null
+        [ $? -eq 0 ] && FOUND[${PROCESS}]=true || FOUND[${PROCESS}]=false
+
+        if ! ${RUNNING[${PROCESS}]}; then
+            if ${FOUND[${PROCESS}]}; then
+                RUNNING[${PROCESS}]=true
+                notify "\"${PROCESS}\" is running."
+            fi
+        else
+            if ! ${FOUND[${PROCESS}]}; then
+                RUNNING[${PROCESS}]=false
+                notify "\"${PROCESS}\" terminated."
+            fi
+        fi
+
+    done
+
+    sleep ${INTERVAL}
+done
