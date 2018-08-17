@@ -1,0 +1,49 @@
+#!/bin/bash
+
+getopt -o hnp --long help,name,pid -- "$@" > /dev/null
+
+if [ $? != 0 ] ; then
+	echo "Options parsing failure." >&2;
+	exit 1;
+fi
+
+PID=*
+
+while true; do
+  case "$1" in
+    -h | --help )
+		echo "Options:"
+		echo -e "\t-h | --help : this screen"
+		echo -e "\t-n | --name : show swap space for the given process name"
+		echo -e "\t-p | --pid  : show swap space for the given PID"
+		exit 0
+	;;
+
+    -n | --name )
+		PID=$(pidof -s $2)
+
+        if [ $? -ne 0 ]; then
+            echo  "Cannot find PID for process \"$2\"." >&2
+            exit 1
+        fi
+		shift 2
+	;;
+
+    -p | --pid )
+		PID=$2
+		shift 2
+	;;
+
+    * )
+		break
+	;;
+  esac
+done
+
+# https://www.cyberciti.biz/faq/linux-which-process-is-using-swap/
+
+#for file in /proc/${PID}/status ; do awk '/VmSwap|Name/{printf $2 " " $3}END{ print ""}' $file; done | sort -k 2 -n -r
+
+for file in /proc/${PID}/status ; do 
+    awk '/^Pid|VmSwap|Name/{printf $2 " " $3}END{ print ""}' $file
+done | sort -k 3 -n -r | column -t
