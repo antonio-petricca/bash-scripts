@@ -2,7 +2,7 @@
 
 if [ $# -lt 3 ]; then
     echo "Usage:"
-    echo "  $(basename $0) [Check interval (seconds)] [Notification timeout (milliseconds)] [Programs list...] "
+    echo "  $(basename $0) [Check interval (seconds)] [Notification timeout (milliseconds)] [Programs list...]"
     exit 1
 fi
 
