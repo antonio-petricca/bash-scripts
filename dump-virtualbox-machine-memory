@@ -1,0 +1,29 @@
+#!/bin/bash
+
+if [ $# -lt 2 ]; then
+    echo "Usage:"
+    echo "  $(basename $0) [Virtualbox Machine Name] [Base dump file name]"
+    exit 1
+fi
+
+# https://www.halfdog.net/Misc/TipsAndTricks/VirtualBox.html
+# https://www.andreafortuna.org/forensics/how-to-extract-a-ram-dump-from-a-running-virtualbox-machine/
+# https://stackoverflow.com/questions/13280131/hexadecimal-to-decimal-in-shell-script
+
+MACHINE=$1
+DUMP=$2.elf
+RAW=$2.raw
+
+[ -f "${DUMP}" ] && ( rm ${DUMP} || exit $? )
+
+echo "Dumping to \"${RAW}\", please wait..."
+
+VBoxManage debugvm "${MACHINE}" dumpvmcore --filename "${DUMP}" && \
+HEX_SIZE=$(objdump -h ${DUMP} | egrep -w "(Idx|load1)" | tr -s " " | cut -d " " -f 4 | tail -1) && \
+INT_SIZE=$(( 16#${HEX_SIZE} )) && \
+SIZE=0x${HEX_SIZE} && \
+OFF=0x$(echo "obase=16;ibase=16;`objdump -h ${DUMP} | egrep -w "(Idx|load1)" | tr -s " " |  cut -d " " -f 7 | tail -1 | tr /a-z/ /A-Z/`" | bc) && \
+head -c $(($SIZE+$OFF)) ${DUMP} | pv -ptebT -s ${INT_SIZE} | tail -c +$((${OFF}+1)) > ${RAW} && \
+echo "RAW dump file successfully written to \"${RAW}\"."
+
+[ -f ${DUMP} ] && rm ${DUMP}
