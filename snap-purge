@@ -1,0 +1,3 @@
+#!/bin/bash
+
+snap list --all | grep disabled | awk '{print $1 " --revision " $3}' | xargs -n3 sudo snap remove
