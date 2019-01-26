@@ -13,9 +13,11 @@ shift 2
 declare -a PROCESSES=($@)
 
 command -v notify-send &> /dev/null || sudo apt install -y libnotify-bin || exit $?
+command -v espeak-ng &> /dev/null || sudo apt install -y espeak-ng || exit $?
 
 function notify {
     notify-send --expire-time=${TIMEOUT} --icon=applications-system "Process Sentinel" "$1"
+    espeak-ng "$1"
     echo "$1"
 }
 
@@ -29,7 +31,7 @@ done
 
 while true; do
     for PROCESS in ${PROCESSES[@]}; do
-        
+
         ps aux | grep ${PROCESS} | grep -v grep | grep -v $(basename $0) &> /dev/null
         [ $? -eq 0 ] && FOUND[${PROCESS}]=true || FOUND[${PROCESS}]=false
 
